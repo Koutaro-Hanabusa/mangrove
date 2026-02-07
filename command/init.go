@@ -48,16 +48,26 @@ var initCmd = &cobra.Command{
 			}
 		}
 
+		// Check fzf availability for directory selection
+		if !mangrove.IsFzfAvailable() {
+			return fmt.Errorf("fzf is required for repository selection. Install it with: brew install fzf")
+		}
+
 		// Loop to add repositories
 		var repos []mangrove.Repo
 		for {
-			repoPath := promptInput(reader, "Add repository path", "")
-			if repoPath == "" {
-				if len(repos) == 0 {
-					fmt.Fprintln(os.Stderr, "  At least one repository is required.")
-					continue
+			fmt.Fprintln(os.Stderr, "? Select repository directory (Esc to finish):")
+			repoPath, err := mangrove.SelectDirectory("Repository path:", home)
+			if err != nil {
+				// User cancelled with Esc
+				if strings.Contains(err.Error(), "cancelled") {
+					if len(repos) == 0 {
+						fmt.Fprintln(os.Stderr, "  At least one repository is required.")
+						continue
+					}
+					break
 				}
-				break
+				return fmt.Errorf("directory selection failed: %w", err)
 			}
 
 			// Expand path for validation

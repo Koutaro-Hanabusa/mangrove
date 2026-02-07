@@ -55,6 +55,54 @@ func SelectWithFzf(items []string, prompt, header string) (string, error) {
 	return selected, nil
 }
 
+// SelectDirectory lets the user pick a directory using fzf's directory walker.
+// walkerRoot sets the starting directory for browsing. If empty, defaults to the user's home directory.
+func SelectDirectory(prompt, walkerRoot string) (string, error) {
+	if !IsFzfAvailable() {
+		return "", fmt.Errorf("fzf is not installed. Install it with: brew install fzf")
+	}
+
+	if walkerRoot == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("cannot determine home directory: %w", err)
+		}
+		walkerRoot = home
+	}
+
+	args := []string{
+		"--walker=dir,hidden",
+		"--walker-root=" + walkerRoot,
+		"--scheme=path",
+		"--height", "~40%",
+		"--reverse",
+	}
+	if prompt != "" {
+		args = append(args, "--prompt", prompt+" ")
+	}
+
+	cmd := exec.Command("fzf", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+
+	output, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if exitErr.ExitCode() == 130 {
+				return "", fmt.Errorf("selection cancelled by user")
+			}
+		}
+		return "", fmt.Errorf("fzf directory selection failed: %w", err)
+	}
+
+	selected := strings.TrimSpace(string(output))
+	if selected == "" {
+		return "", fmt.Errorf("no directory selected")
+	}
+
+	return selected, nil
+}
+
 // SelectBranch gets the branch list for a repo, puts defaultBranch first,
 // and lets the user select via fzf.
 func SelectBranch(repoPath, prompt, defaultBranch string) (string, error) {
