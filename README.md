@@ -259,6 +259,15 @@ mgv profile list
 
 # プロファイルの詳細表示
 mgv profile show project-a
+
+# 新しいプロファイルを追加 (対話式)
+mgv profile add
+
+# 既存プロファイルにリポジトリを追加
+mgv profile add-repo project-a
+
+# プロファイルからリポジトリを削除
+mgv profile remove-repo project-a backend
 ```
 
 `profile list` の出力例:
@@ -286,6 +295,19 @@ project-a (default)
     backend: go mod download
 ```
 
+#### プロファイル管理サブコマンド
+
+| サブコマンド | 説明 |
+|---|---|
+| `profile list` | プロファイル一覧（`*` はデフォルト） |
+| `profile show <name>` | プロファイルの詳細表示 |
+| `profile add` | 新しいプロファイルを対話的に作成（fzf でリポジトリ選択） |
+| `profile add-repo [profile]` | 既存プロファイルにリポジトリを追加 |
+| `profile remove-repo [profile] [repo]` | プロファイルからリポジトリを削除 |
+
+`profile add-repo` はプロファイル名を省略すると `--profile` フラグまたはデフォルトプロファイルが使用されます。
+`profile remove-repo` は `mgv profile remove-repo backend -p project-a` のように `--profile` フラグでも指定可能です。
+
 ## コマンドまとめ
 
 | コマンド | 対話式 | 非対話 | 説明 |
@@ -298,6 +320,9 @@ project-a (default)
 | `mgv status [name]` | fzf でワークスペース選択 | 引数で直接指定 | git status まとめ表示 |
 | `mgv profile list` | - | - | プロファイル一覧 |
 | `mgv profile show <name>` | - | - | プロファイル詳細 |
+| `mgv profile add` | fzf でリポジトリ選択 | - | プロファイル追加 |
+| `mgv profile add-repo [profile]` | fzf でディレクトリ選択 | `--profile` | リポジトリ追加 |
+| `mgv profile remove-repo [profile] [repo]` | - | `--profile` | リポジトリ削除 |
 
 ## ディレクトリ構成
 
@@ -347,17 +372,37 @@ mangrove/
 │   ├── cd.go                # mgv cd
 │   ├── exec.go              # mgv exec
 │   ├── status.go            # mgv status
-│   └── profile.go           # mgv profile list / show
+│   └── profile.go           # mgv profile list / show / add / add-repo / remove-repo
 ├── config.go                # 設定読み込み、Profile / Repo 構造体
 ├── git.go                   # git コマンド呼び出しラッパー
 ├── workspace.go             # ワークスペース操作ロジック
 ├── fzf.go                   # fzf 呼び出しヘルパー
 ├── ui.go                    # lipgloss スタイル定義、出力ヘルパー
+├── config_test.go           # Config ユニットテスト
+├── config_integration_test.go # SaveConfig/LoadConfig ラウンドトリップテスト
+├── workspace_test.go        # Workspace ユニットテスト
+├── git_test.go              # parseLines ユニットテスト
+├── git_integration_test.go  # Git操作インテグレーションテスト
+├── fzf_test.go              # reorderWithDefault ユニットテスト
+├── ui_test.go               # joinParts ユニットテスト
 ├── go.mod
 ├── go.sum
 ├── LICENSE
 └── README.md
 ```
+
+## テスト
+
+```bash
+# 全テスト実行
+go test ./... -v
+
+# 特定のテストのみ実行
+go test -run TestExpandPath -v
+go test -run TestWorktreeLifecycle -v
+```
+
+インテグレーションテストは `t.TempDir()` で一時 git リポジトリを作成するため、外部環境への影響はありません。
 
 ## ライセンス
 
