@@ -40,7 +40,7 @@ var rootCmd = &cobra.Command{
 	Version: resolveVersion(),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip config loading for completion commands
-		if cmd.Name() == "completion" || cmd.Name() == "help" {
+		if cmd.Name() == "completion" || cmd.Name() == "help" || cmd.Name() == "init" {
 			return nil
 		}
 
