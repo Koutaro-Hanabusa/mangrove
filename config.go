@@ -3,10 +3,12 @@ package mangrove
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 // Hook represents a post-create hook to run after workspace creation.
@@ -50,6 +52,85 @@ func ExpandPath(path string) string {
 		return filepath.Join(home, path[2:])
 	}
 	return path
+}
+
+// CollapsePath replaces the home directory prefix with ~/ for portable storage.
+func CollapsePath(path string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return path
+	}
+	if strings.HasPrefix(path, home+"/") {
+		return "~/" + path[len(home)+1:]
+	}
+	if path == home {
+		return "~"
+	}
+	return path
+}
+
+// SaveConfig writes the Config struct to ~/.config/mgv/config.yaml.
+func SaveConfig(cfg *Config) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("cannot determine home directory: %w", err)
+	}
+
+	configDir := filepath.Join(home, ".config", "mgv")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	// Collapse paths to ~/ form for portable storage
+	saveCfg := Config{
+		BaseDir:        CollapsePath(cfg.BaseDir),
+		DefaultProfile: cfg.DefaultProfile,
+		Profiles:       make(map[string]Profile, len(cfg.Profiles)),
+	}
+	for profileName, profile := range cfg.Profiles {
+		repos := make([]Repo, len(profile.Repos))
+		for i, repo := range profile.Repos {
+			repos[i] = Repo{
+				Name:        repo.Name,
+				Path:        CollapsePath(repo.Path),
+				DefaultBase: repo.DefaultBase,
+			}
+		}
+		saveCfg.Profiles[profileName] = Profile{
+			Repos: repos,
+			Hooks: profile.Hooks,
+		}
+	}
+
+	data, err := yaml.Marshal(&saveCfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	configPath := filepath.Join(configDir, "config.yaml")
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
+}
+
+// DetectDefaultBranch detects the default branch of a remote repository.
+// Falls back to "main" on error.
+func DetectDefaultBranch(repoPath string) string {
+	cmd := exec.Command("git", "-C", repoPath, "symbolic-ref", "refs/remotes/origin/HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "main"
+	}
+
+	// Parse "refs/remotes/origin/main" -> "main"
+	ref := strings.TrimSpace(string(output))
+	parts := strings.Split(ref, "/")
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return "main"
 }
 
 // LoadConfig reads the configuration from ~/.config/mgv/config.yaml.
