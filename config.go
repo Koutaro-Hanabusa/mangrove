@@ -200,6 +200,60 @@ func (c *Config) ProfileNames() []string {
 	return names
 }
 
+// AddProfile adds a new profile to the config.
+// Returns an error if a profile with the same name already exists.
+func (c *Config) AddProfile(name string, profile Profile) error {
+	if c.Profiles == nil {
+		c.Profiles = make(map[string]Profile)
+	}
+	if _, exists := c.Profiles[name]; exists {
+		return fmt.Errorf("profile %q already exists", name)
+	}
+	c.Profiles[name] = profile
+	return nil
+}
+
+// AddRepoToProfile adds a repository to an existing profile.
+// Returns an error if the profile does not exist or if a repo with the same name already exists.
+func (c *Config) AddRepoToProfile(profileName string, repo Repo) error {
+	profile, ok := c.Profiles[profileName]
+	if !ok {
+		return fmt.Errorf("profile %q not found", profileName)
+	}
+	for _, r := range profile.Repos {
+		if r.Name == repo.Name {
+			return fmt.Errorf("repository %q already exists in profile %q", repo.Name, profileName)
+		}
+	}
+	profile.Repos = append(profile.Repos, repo)
+	c.Profiles[profileName] = profile
+	return nil
+}
+
+// RemoveRepoFromProfile removes a repository from an existing profile by name.
+// Returns an error if the profile or repository is not found.
+func (c *Config) RemoveRepoFromProfile(profileName, repoName string) error {
+	profile, ok := c.Profiles[profileName]
+	if !ok {
+		return fmt.Errorf("profile %q not found", profileName)
+	}
+	found := false
+	repos := make([]Repo, 0, len(profile.Repos))
+	for _, r := range profile.Repos {
+		if r.Name == repoName {
+			found = true
+			continue
+		}
+		repos = append(repos, r)
+	}
+	if !found {
+		return fmt.Errorf("repository %q not found in profile %q", repoName, profileName)
+	}
+	profile.Repos = repos
+	c.Profiles[profileName] = profile
+	return nil
+}
+
 // GetRepoDefaultBase returns the default base branch for a repo,
 // falling back to "main" if not set.
 func (r *Repo) GetDefaultBase() string {

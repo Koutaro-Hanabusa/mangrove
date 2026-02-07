@@ -259,6 +259,15 @@ mgv profile list
 
 # プロファイルの詳細表示
 mgv profile show project-a
+
+# 新しいプロファイルを対話的に作成
+mgv profile add
+
+# 既存プロファイルにリポジトリを追加
+mgv profile add-repo project-a
+
+# プロファイルからリポジトリを削除
+mgv profile remove-repo project-a frontend-A
 ```
 
 `profile list` の出力例:
@@ -298,6 +307,9 @@ project-a (default)
 | `mgv status [name]` | fzf でワークスペース選択 | 引数で直接指定 | git status まとめ表示 |
 | `mgv profile list` | - | - | プロファイル一覧 |
 | `mgv profile show <name>` | - | - | プロファイル詳細 |
+| `mgv profile add` | プロファイル名 / リポ選択を対話 | - | プロファイル作成 |
+| `mgv profile add-repo [profile]` | リポ選択を対話 | 引数で直接指定 | リポジトリ追加 |
+| `mgv profile remove-repo [profile] [repo]` | fzf でリポ選択 | 引数で直接指定 | リポジトリ削除 |
 
 ## ディレクトリ構成
 
@@ -347,7 +359,7 @@ mangrove/
 │   ├── cd.go                # mgv cd
 │   ├── exec.go              # mgv exec
 │   ├── status.go            # mgv status
-│   └── profile.go           # mgv profile list / show
+│   └── profile.go           # mgv profile list / show / add / add-repo / remove-repo
 ├── config.go                # 設定読み込み、Profile / Repo 構造体
 ├── git.go                   # git コマンド呼び出しラッパー
 ├── workspace.go             # ワークスペース操作ロジック
