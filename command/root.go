@@ -3,13 +3,14 @@ package command
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/Koutaro-Hanabusa/mangrove"
 	"github.com/spf13/cobra"
 )
 
 var (
-	// Version is set at build time.
+	// Version is set at build time via ldflags. Falls back to debug.BuildInfo or "dev".
 	Version = "dev"
 
 	// profileFlag is the global --profile flag.
@@ -19,12 +20,24 @@ var (
 	cfg *mangrove.Config
 )
 
+func resolveVersion() string {
+	// If ldflags set a non-default version, use it.
+	if Version != "dev" {
+		return Version
+	}
+	// Try to get version from module info (populated by go install).
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
+
 // rootCmd is the base command.
 var rootCmd = &cobra.Command{
 	Use:     "mgv",
 	Short:   "mangrove - Multi-repo worktree manager",
 	Long:    "mangrove (mgv) manages workspaces across multiple git repositories using git worktree.",
-	Version: Version,
+	Version: resolveVersion(),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip config loading for completion commands
 		if cmd.Name() == "completion" || cmd.Name() == "help" {
