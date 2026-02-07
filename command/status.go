@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/1126buri/mangrove"
+	"github.com/Koutaro-Hanabusa/mangrove"
 	"github.com/spf13/cobra"
 )
 

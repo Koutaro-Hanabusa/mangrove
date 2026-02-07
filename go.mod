@@ -1,4 +1,4 @@
-module github.com/1126buri/mangrove
+module github.com/Koutaro-Hanabusa/mangrove
 
 go 1.25.7
 

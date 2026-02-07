@@ -22,13 +22,13 @@
 ### go install
 
 ```bash
-go install github.com/1126buri/mangrove/cmd/mgv@latest
+go install github.com/Koutaro-Hanabusa/mangrove/cmd/mgv@latest
 ```
 
 ### ソースからビルド
 
 ```bash
-git clone https://github.com/1126buri/mangrove.git
+git clone https://github.com/Koutaro-Hanabusa/mangrove.git
 cd mangrove
 go build -o mgv ./cmd/mgv
 ```
