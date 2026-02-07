@@ -1,0 +1,76 @@
+name: Release PR
+
+on:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: version
+        run: |
+          LATEST=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          MAJOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f1)
+          MINOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f2)
+          PATCH=$(echo "$LATEST" | sed 's/v//' | cut -d. -f3)
+          NEXT="v${MAJOR}.$((MINOR + 1)).${PATCH}"
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            LOG=$(git log "${LATEST_TAG}..HEAD" --pretty=format:"- %s" --no-merges)
+          else
+            LOG=$(git log --pretty=format:"- %s" --no-merges)
+          fi
+          {
+            echo "log<<EOF"
+            echo "$LOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create or update Release PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.next }}
+          CHANGELOG: ${{ steps.changelog.outputs.log }}
+        run: |
+          EXISTING=$(gh pr list --base main --head staging --json number --jq '.[0].number')
+
+          BODY=$(cat <<EOF
+          ## Release ${VERSION}
+
+          ### Changes
+          ${CHANGELOG}
+
+          ---
+          Merging this PR will automatically create a GitHub Release with cross-platform binaries.
+          EOF
+          )
+
+          if [ -n "$EXISTING" ]; then
+            gh pr edit "$EXISTING" \
+              --title "release: ${VERSION}" \
+              --body "$BODY"
+            echo "Updated existing PR #${EXISTING}"
+          else
+            gh pr create \
+              --base main \
+              --head staging \
+              --title "release: ${VERSION}" \
+              --body "$BODY"
+            echo "Created new Release PR"
+          fi
