@@ -61,10 +61,6 @@ var initCmd = &cobra.Command{
 			if err != nil {
 				// User cancelled with Esc
 				if strings.Contains(err.Error(), "cancelled") {
-					if len(repos) == 0 {
-						fmt.Fprintln(os.Stderr, "  At least one repository is required.")
-						continue
-					}
 					break
 				}
 				return fmt.Errorf("directory selection failed: %w", err)
