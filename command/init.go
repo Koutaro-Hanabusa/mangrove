@@ -2,6 +2,7 @@ package command
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -60,7 +61,7 @@ var initCmd = &cobra.Command{
 			repoPath, err := mangrove.SelectGitRepository("Repository path:", home)
 			if err != nil {
 				// User cancelled with Esc
-				if strings.Contains(err.Error(), "cancelled") {
+				if errors.Is(err, mangrove.ErrCancelled) {
 					break
 				}
 				return fmt.Errorf("directory selection failed: %w", err)

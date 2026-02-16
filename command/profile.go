@@ -2,11 +2,11 @@ package command
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/Koutaro-Hanabusa/mangrove"
 	"github.com/spf13/cobra"
@@ -126,7 +126,7 @@ var profileAddCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, "? Select repository directory (Esc to finish):")
 			repoPath, err := mangrove.SelectDirectory("Repository path:", home)
 			if err != nil {
-				if strings.Contains(err.Error(), "cancelled") {
+				if errors.Is(err, mangrove.ErrCancelled) {
 					if len(repos) == 0 {
 						fmt.Fprintln(os.Stderr, "  At least one repository is required.")
 						continue
