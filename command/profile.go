@@ -138,8 +138,8 @@ var profileAddCmd = &cobra.Command{
 
 			expandedPath := mangrove.ExpandPath(repoPath)
 
-			if !isGitRepo(expandedPath) {
-				fmt.Fprintf(os.Stderr, "  %s is not a valid git repository.\n", expandedPath)
+			if !isGitRepoRoot(expandedPath) {
+				fmt.Fprintf(os.Stderr, "  %s is not a git repository root.\n", expandedPath)
 				continue
 			}
 
@@ -236,8 +236,8 @@ var profileAddRepoCmd = &cobra.Command{
 
 		expandedPath := mangrove.ExpandPath(repoPath)
 
-		if !isGitRepo(expandedPath) {
-			return fmt.Errorf("%s is not a valid git repository", expandedPath)
+		if !isGitRepoRoot(expandedPath) {
+			return fmt.Errorf("%s is not a git repository root", expandedPath)
 		}
 
 		repoName := filepath.Base(expandedPath)
