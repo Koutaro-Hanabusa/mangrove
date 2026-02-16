@@ -57,14 +57,10 @@ var initCmd = &cobra.Command{
 		var repos []mangrove.Repo
 		for {
 			fmt.Fprintln(os.Stderr, "? Select repository directory (Esc to finish):")
-			repoPath, err := mangrove.SelectDirectory("Repository path:", home)
+			repoPath, err := mangrove.SelectGitRepository("Repository path:", home)
 			if err != nil {
 				// User cancelled with Esc
 				if strings.Contains(err.Error(), "cancelled") {
-					if len(repos) == 0 {
-						fmt.Fprintln(os.Stderr, "  At least one repository is required.")
-						continue
-					}
 					break
 				}
 				return fmt.Errorf("directory selection failed: %w", err)
@@ -74,8 +70,8 @@ var initCmd = &cobra.Command{
 			expandedPath := mangrove.ExpandPath(repoPath)
 
 			// Validate it's a git repo
-			if !isGitRepo(expandedPath) {
-				fmt.Fprintf(os.Stderr, "  %s is not a valid git repository.\n", expandedPath)
+			if !isGitRepoRoot(expandedPath) {
+				fmt.Fprintf(os.Stderr, "  %s is not a git repository root.\n", expandedPath)
 				continue
 			}
 
@@ -169,11 +165,15 @@ func promptYesNo(reader *bufio.Reader, defaultYes bool) bool {
 	}
 }
 
-// isGitRepo checks if the given path is inside a git repository.
-func isGitRepo(path string) bool {
-	cmd := exec.Command("git", "-C", path, "rev-parse", "--is-inside-work-tree")
-	err := cmd.Run()
-	return err == nil
+// isGitRepoRoot checks if the given path is the root of a git repository.
+func isGitRepoRoot(path string) bool {
+	cmd := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel")
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	toplevel := strings.TrimSpace(string(out))
+	return toplevel == path
 }
 
 func init() {

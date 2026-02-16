@@ -2,8 +2,10 @@ package mangrove
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -101,6 +103,79 @@ func SelectDirectory(prompt, walkerRoot string) (string, error) {
 	}
 
 	return selected, nil
+}
+
+// skipDirs lists directory names that should be skipped during repository search.
+var skipDirs = map[string]bool{
+	"node_modules": true,
+	".cache":       true,
+	".npm":         true,
+	".cargo":       true,
+	"vendor":       true,
+	"Library":      true,
+}
+
+// FindGitRepositories walks the directory tree rooted at root and returns
+// paths that contain a .git directory (i.e., repository roots).
+// It skips common non-project directories for performance and stops descending
+// into a repository once .git is found.
+func FindGitRepositories(root string) ([]string, error) {
+	var repos []string
+
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fs.SkipDir
+		}
+
+		if !d.IsDir() {
+			return nil
+		}
+
+		name := d.Name()
+
+		// Skip common non-project directories
+		if skipDirs[name] {
+			return fs.SkipDir
+		}
+
+		// Check if this directory contains .git
+		gitDir := filepath.Join(path, ".git")
+		if info, err := os.Stat(gitDir); err == nil && info.IsDir() {
+			repos = append(repos, path)
+			return fs.SkipDir // Don't descend into this repo
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to walk directory tree: %w", err)
+	}
+
+	return repos, nil
+}
+
+// SelectGitRepository finds git repositories under root and lets the user
+// pick one via fzf.
+func SelectGitRepository(prompt, root string) (string, error) {
+	if root == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("cannot determine home directory: %w", err)
+		}
+		root = home
+	}
+
+	repos, err := FindGitRepositories(root)
+	if err != nil {
+		return "", err
+	}
+
+	if len(repos) == 0 {
+		return "", fmt.Errorf("no git repositories found under %s", root)
+	}
+
+	return SelectWithFzf(repos, prompt, "Select git repository")
 }
 
 // SelectBranch gets the branch list for a repo, puts defaultBranch first,
