@@ -77,7 +77,7 @@ func SelectDirectory(prompt, walkerRoot string) (string, error) {
 	}
 
 	args := []string{
-		"--walker=dir,hidden",
+		"--walker=dir",
 		"--walker-root=" + walkerRoot,
 		"--scheme=path",
 		"--height", "~40%",

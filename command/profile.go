@@ -124,7 +124,7 @@ var profileAddCmd = &cobra.Command{
 		var repos []mangrove.Repo
 		for {
 			fmt.Fprintln(os.Stderr, "? Select repository directory (Esc to finish):")
-			repoPath, err := mangrove.SelectDirectory("Repository path:", home)
+			repoPath, err := mangrove.SelectGitRepository("Repository path:", home)
 			if err != nil {
 				if errors.Is(err, mangrove.ErrCancelled) {
 					if len(repos) == 0 {
@@ -229,7 +229,7 @@ var profileAddRepoCmd = &cobra.Command{
 
 		// Select repository directory
 		fmt.Fprintln(os.Stderr, "? Select repository directory:")
-		repoPath, err := mangrove.SelectDirectory("Repository path:", home)
+		repoPath, err := mangrove.SelectGitRepository("Repository path:", home)
 		if err != nil {
 			return fmt.Errorf("directory selection failed: %w", err)
 		}
