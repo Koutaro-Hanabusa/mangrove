@@ -1,6 +1,7 @@
 package mangrove
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -8,6 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+// ErrCancelled is returned when the user cancels an fzf selection (Esc or Ctrl+C).
+var ErrCancelled = errors.New("selection cancelled by user")
 
 // IsFzfAvailable checks whether fzf is installed and available in PATH.
 func IsFzfAvailable() bool {
@@ -42,8 +46,8 @@ func SelectWithFzf(items []string, prompt, header string) (string, error) {
 	output, err := cmd.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			if exitErr.ExitCode() == 130 {
-				return "", fmt.Errorf("selection cancelled by user")
+			if exitErr.ExitCode() == 130 || exitErr.ExitCode() == 1 {
+				return "", fmt.Errorf("%w", ErrCancelled)
 			}
 		}
 		return "", fmt.Errorf("fzf selection failed: %w", err)
@@ -90,8 +94,8 @@ func SelectDirectory(prompt, walkerRoot string) (string, error) {
 	output, err := cmd.Output()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			if exitErr.ExitCode() == 130 {
-				return "", fmt.Errorf("selection cancelled by user")
+			if exitErr.ExitCode() == 130 || exitErr.ExitCode() == 1 {
+				return "", fmt.Errorf("%w", ErrCancelled)
 			}
 		}
 		return "", fmt.Errorf("fzf directory selection failed: %w", err)

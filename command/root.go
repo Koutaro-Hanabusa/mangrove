@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -62,6 +63,9 @@ func init() {
 // Execute runs the root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
+		if errors.Is(err, mangrove.ErrCancelled) {
+			return
+		}
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
