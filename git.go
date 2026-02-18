@@ -191,6 +191,105 @@ func CurrentBranch(path string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+// StashPush は変更をstashに退避する（未追跡ファイルも含む）。
+// 実行コマンド: git -C <path> stash push --include-untracked -m <message>
+func StashPush(path, message string) error {
+	cmd := exec.Command("git", "-C", path, "stash", "push", "--include-untracked", "-m", message)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git stash push failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// StashPop は最新のstashエントリを適用して削除する。
+// 実行コマンド: git -C <path> stash pop
+func StashPop(path string) error {
+	cmd := exec.Command("git", "-C", path, "stash", "pop")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git stash pop failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// StashRef は最新のstashエントリのコミットSHAを返す。
+// worktree間でstashを共有するために使用する（reflogはworktreeごとだがオブジェクトは共有）。
+func StashRef(path string) (string, error) {
+	cmd := exec.Command("git", "-C", path, "rev-parse", "stash@{0}")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("git rev-parse stash@{0} failed: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// StashApply はstashのコミットSHAを指定して変更を適用する（stashは削除しない）。
+// 実行コマンド: git -C <path> stash apply <ref>
+func StashApply(path, ref string) error {
+	cmd := exec.Command("git", "-C", path, "stash", "apply", ref)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git stash apply failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// StashDrop は最新のstashエントリを削除する。
+// 実行コマンド: git -C <path> stash drop
+func StashDrop(path string) error {
+	cmd := exec.Command("git", "-C", path, "stash", "drop")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git stash drop failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// CheckoutBranch は既存のブランチに切り替える。
+// 実行コマンド: git -C <path> checkout <branch>
+func CheckoutBranch(path, branch string) error {
+	cmd := exec.Command("git", "-C", path, "checkout", branch)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git checkout failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// CheckoutNewBranch はベースブランチから新しいブランチを作成して切り替える。
+// 実行コマンド: git -C <path> checkout -b <newBranch> <base>
+func CheckoutNewBranch(path, newBranch, base string) error {
+	cmd := exec.Command("git", "-C", path, "checkout", "-b", newBranch, base)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git checkout -b failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// MergeAbort は進行中のマージを中断する。
+// 実行コマンド: git -C <path> merge --abort
+func MergeAbort(path string) error {
+	cmd := exec.Command("git", "-C", path, "merge", "--abort")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git merge --abort failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// Merge は指定ブランチを現在のブランチにマージする。
+// 実行コマンド: git -C <path> merge <branch>
+func Merge(path, branch string) error {
+	cmd := exec.Command("git", "-C", path, "merge", branch)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git merge failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
 // parseLines splits output by newlines and returns non-empty trimmed lines.
 func parseLines(output string) []string {
 	var lines []string
