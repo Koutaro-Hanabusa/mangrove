@@ -210,6 +210,13 @@ func SelectProfile(names []string) (string, error) {
 	return SelectWithFzf(names, "Profile:", "Select profile")
 }
 
+// SelectMethod lets the user choose the apply method (stash, merge, or skip) via fzf.
+func SelectMethod(repoName string) (string, error) {
+	items := []string{"stash", "merge", "skip"}
+	header := fmt.Sprintf("[%s] stash=未コミット変更を反映 / merge=コミット済み変更をマージ / skip=スキップ", repoName)
+	return SelectWithFzf(items, "Method:", header)
+}
+
 // reorderWithDefault moves the defaultItem to the front of the list.
 func reorderWithDefault(items []string, defaultItem string) []string {
 	if defaultItem == "" {

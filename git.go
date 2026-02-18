@@ -191,6 +191,61 @@ func CurrentBranch(path string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+// StashPush creates a stash entry with a message.
+// Equivalent to: git -C <path> stash push -m <message>
+func StashPush(path, message string) error {
+	cmd := exec.Command("git", "-C", path, "stash", "push", "-m", message)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git stash push failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// StashPop applies and removes the latest stash entry.
+// Equivalent to: git -C <path> stash pop
+func StashPop(path string) error {
+	cmd := exec.Command("git", "-C", path, "stash", "pop")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git stash pop failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// CheckoutBranch switches to an existing branch.
+// Equivalent to: git -C <path> checkout <branch>
+func CheckoutBranch(path, branch string) error {
+	cmd := exec.Command("git", "-C", path, "checkout", branch)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git checkout failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// CheckoutNewBranch creates and switches to a new branch from a base.
+// Equivalent to: git -C <path> checkout -b <newBranch> <base>
+func CheckoutNewBranch(path, newBranch, base string) error {
+	cmd := exec.Command("git", "-C", path, "checkout", "-b", newBranch, base)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git checkout -b failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
+// Merge merges the specified branch into the current branch.
+// Equivalent to: git -C <path> merge <branch>
+func Merge(path, branch string) error {
+	cmd := exec.Command("git", "-C", path, "merge", branch)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git merge failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}
+
 // parseLines splits output by newlines and returns non-empty trimmed lines.
 func parseLines(output string) []string {
 	var lines []string
